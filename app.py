@@ -13,7 +13,7 @@ st.markdown("""
         .response-box {background-color: #e0f2f1; padding: 10px; border-radius: 8px;}
         .error-box {background-color: #ffccbc; padding: 10px; border-radius: 8px;}
         .speech-icon {font-size: 24px; color: #00796b;}
-        .input-box {font-size: 18px; padding: 10px; border-radius: 8px; border: 1px solid #00796b;}
+        .custom-input {font-size: 18px; padding: 10px; border-radius: 8px; border: 1px solid #00796b;}
     </style>
     <h1 class="title">Cipher Expert Assistant</h1>
     <p class="instructions">Choose your input method (Text or Voice) to interact with the cipher transformation expert. Speak or type your message and get the transformed result.</p>
@@ -83,48 +83,49 @@ input_type = st.radio("Choose your input method:", ("Text", "Voice"), index=0, k
 if input_type == "Voice":
     # Voice Input Section
     st.markdown("<div class='section'></div>", unsafe_allow_html=True)  # Spacing between sections
-    st.button("🔊 Start Speaking", key="speak_button", on_click=capture_speech, use_container_width=True)
+    if st.button("🔊 Start Speaking", key="speak_button"):
+        speech_input = capture_speech()
+        
+        if speech_input:
+            st.subheader("Your Voice Input:")
+            st.markdown(f"<div class='response-box'>{speech_input}</div>", unsafe_allow_html=True)
 
-    speech_input = capture_speech()
-    
-    if speech_input:
-        st.subheader("Your Voice Input:")
-        st.markdown(f"<div class='response-box'>{speech_input}</div>", unsafe_allow_html=True)
+            # Process the speech input with the existing prompt chain
+            try:
+                # Chain the prompt and LLM
+                chain = prompt | llm
 
-        # Process the speech input with the existing prompt chain
-        try:
-            # Chain the prompt and LLM
-            chain = prompt | llm
+                # Invoke the chain with the user's speech input
+                response = chain.invoke({"question": speech_input})
 
-            # Invoke the chain with the user's speech input
-            response = chain.invoke({"question": speech_input})
+                # Display the response
+                st.subheader("Cipher Result:")
+                st.markdown(f"<div class='response-box'>{response}</div>", unsafe_allow_html=True)
 
-            # Display the response
-            st.subheader("Cipher Result:")
-            st.markdown(f"<div class='response-box'>{response}</div>", unsafe_allow_html=True)
-
-        except Exception as e:
-            st.markdown(f"<div class='error-box'>Error: {str(e)}</div>", unsafe_allow_html=True)
+            except Exception as e:
+                st.markdown(f"<div class='error-box'>Error: {str(e)}</div>", unsafe_allow_html=True)
 
 elif input_type == "Text":
     # Text Input Section
     st.markdown("<div class='section'></div>", unsafe_allow_html=True)  # Spacing between sections
-    question = st.text_input("Enter your message:", key="text_input", help="Type the message and choose a cipher transformation.", class_='input-box')
+    question = st.text_input(
+        "Enter your message:", 
+        key="text_input", 
+        help="Type the message and choose a cipher transformation."
+    )
 
     if question:
-        st.markdown("<div class='section'></div>", unsafe_allow_html=True)  # Spacing between sections
-        st.spinner("Processing... Please wait!")
+        st.markdown("<div class='section'></div>", unsafe_allow_html=True)  
+        with st.spinner("Processing... Please wait!"):
 
-        try:
-            # Chain the prompt and LLM
-            chain = prompt | llm
+            try:
+                chain = prompt | llm
 
-            # Invoke the chain with the user's text input
-            response = chain.invoke({"question": question})
+                response = chain.invoke({"question": question})
 
-            # Display the response
-            st.subheader("Cipher Result:")
-            st.markdown(f"<div class='response-box'>{response}</div>", unsafe_allow_html=True)
+                # Display the response
+                st.subheader("Cipher Result:")
+                st.markdown(f"<div class='response-box'>{response}</div>", unsafe_allow_html=True)
 
-        except Exception as e:
-            st.markdown(f"<div class='error-box'>Error: {str(e)}</div>", unsafe_allow_html=True)
+            except Exception as e:
+                st.markdown(f"<div class='error-box'>Error: {str(e)}</div>", unsafe_allow_html=True)
